@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeliverEase · App</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue: #3B3D9B;
+  --blue2: #4547b8;
+  --blue-light: #eef0ff;
+  --green: #22c55e;
+  --orange: #f97316;
+  --ink: #111827;
+  --mid: #4b5563;
+  --muted: #9ca3af;
+  --border: #e5e7eb;
+  --bg: #f9fafb;
+  --white: #ffffff;
+  --red: #ef4444;
+  --r: 12px;
+}
+
+body {
+  background: #1a1a2e;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+}
+
+/* ===== PHONE SHELL ===== */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--white);
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 0 0 2px rgba(255,255,255,0.1);
+}
+
+/* Notch */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 126px; height: 34px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  z-index: 999;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(30px);
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+.screen.slide-back {
+  transform: translateX(-30px);
+}
+
+/* ===== STATUS BAR ===== */
+.statusbar {
+  height: 44px;
+  padding: 14px 24px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.statusbar .time { font-size: 15px; font-weight: 700; }
+.statusbar .icons { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+
+/* ===== SCROLLABLE CONTENT ===== */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-area::-webkit-scrollbar { display: none; }
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  height: 72px;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: 8px;
+  flex-shrink: 0;
+}
+.nav-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: color 0.15s;
+}
+.nav-item.active { color: var(--blue); }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-fab {
+  width: 52px; height: 52px;
+  background: var(--blue);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59,61,155,0.4);
+  position: relative;
+  margin-top: -16px;
+}
+.nav-fab svg { width: 24px; height: 24px; color: white; }
+.cart-badge {
+  position: absolute; top: -2px; right: -2px;
+  background: var(--red); color: white;
+  font-size: 10px; font-weight: 700;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  display: none;
+}
+
+/* ===== SPLASH ===== */
+#screen-splash {
+  background: var(--blue);
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.splash-logo {
+  display: flex; align-items: center; gap: 12px;
+  color: white;
+}
+.splash-logo svg { width: 44px; height: 44px; }
+.splash-logo span {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.5px;
+}
+.splash-bar {
+  position: absolute; bottom: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 3px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.splash-bar-fill {
+  height: 100%;
+  background: white;
+  width: 0%;
+  border-radius: 2px;
+  animation: splashLoad 2.8s ease-in-out forwards;
+}
+@keyframes splashLoad { to { width: 100%; } }
+
+/* ===== HOME ===== */
+#screen-home { background: var(--bg); }
+
+.home-header {
+  background: var(--blue);
+  padding: 48px 20px 20px;
+  color: white;
+}
+.home-header-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px;
+}
+.home-logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; }
+.home-logo svg { width: 22px; height: 22px; }
+.home-header-icons { display: flex; gap: 10px; }
+.header-icon-btn {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative;
+}
+.header-icon-btn svg { width: 18px; height: 18px; color: white; }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px;
+  background: var(--red); border-radius: 50%;
+  border: 1.5px solid var(--blue);
+}
+
+.search-box {
+  display: flex; align-items: center; gap: 10px;
+  background: white; border-radius: 12px;
+  padding: 10px 14px; margin-bottom: 10px;
+  cursor: pointer;
+}
+.search-box svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+.search-box span { color: var(--muted); font-size: 14px; }
+
+.address-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: rgba(255,255,255,0.85);
+}
+.address-row svg { width: 14px; height: 14px; }
+.address-row .chevron { opacity: 0.6; font-size: 10px; }
+
+.home-body { padding: 16px; }
+
+/* Categorias */
+.section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.section-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+.section-link { font-size: 13px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+.categories {
+  display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px;
+}
+.categories::-webkit-scrollbar { display: none; }
+.cat-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  flex-shrink: 0; cursor: pointer;
+}
+.cat-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.cat-label { font-size: 11px; color: var(--mid); font-weight: 500; white-space: nowrap; }
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, #3B3D9B 0%, #1e1f5e 100%);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; overflow: hidden; position: relative;
+}
+.banner-label {
+  background: rgba(255,255,255,0.2);
+  color: white; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px;
+  display: inline-block; margin-bottom: 6px;
+}
+.banner h3 { color: white; font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.banner p { color: rgba(255,255,255,0.8); font-size: 12px; margin-bottom: 10px; }
+.banner-btn {
+  background: white; color: var(--blue);
+  font-size: 12px; font-weight: 700;
+  padding: 7px 14px; border-radius: 8px;
+  display: inline-block; cursor: pointer;
+}
+.banner-emoji { font-size: 52px; line-height: 1; }
+
+/* Restaurante cards */
+.rest-card {
+  background: white; border-radius: 14px;
+  overflow: hidden; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.rest-card:active { transform: scale(0.98); }
+.rest-card-img {
+  width: 100%; height: 130px;
+  background: var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  position: relative;
+}
+.rest-rating {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(0,0,0,0.6); color: white;
+  font-size: 12px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  display: flex; align-items: center; gap: 3px;
+}
+.rest-card-body { padding: 12px; }
+.rest-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.rest-cat { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.rest-meta { display: flex; gap: 12px; align-items: center; }
+.rest-meta-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--mid); }
+.rest-meta-item svg { width: 13px; height: 13px; }
+.rest-meta-item.free { color: var(--blue); font-weight: 600; }
+.fav-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.fav-btn svg { width: 16px; height: 16px; }
+
+/* ===== RESTAURANTE ===== */
+#screen-rest { background: var(--bg); }
+
+.rest-hero {
+  width: 100%; height: 200px;
+  background: var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px;
+  position: relative; flex-shrink: 0;
+}
+.rest-hero-back, .rest-hero-search, .rest-hero-fav {
+  position: absolute;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.rest-hero-back { top: 52px; left: 14px; }
+.rest-hero-search { top: 52px; right: 52px; }
+.rest-hero-fav { top: 52px; right: 14px; }
+.rest-hero-back svg, .rest-hero-search svg, .rest-hero-fav svg { width: 18px; height: 18px; color: var(--ink); }
+
+.rest-info-card {
+  background: white; margin: 0;
+  padding: 16px; border-bottom: 1px solid var(--border);
+}
+.rest-info-name { font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
+.rest-info-sub { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.rest-info-meta { display: flex; gap: 16px; }
+.rest-info-meta span { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--mid); }
+.rest-info-meta svg { width: 14px; height: 14px; }
+.rest-info-meta .star { color: #f59e0b; font-weight: 700; }
+
+/* Abas */
+.tabs {
+  display: flex; gap: 0;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; flex-shrink: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-item {
+  padding: 12px 18px;
+  font-size: 14px; font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab-item.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* Cardápio */
+.menu-section-title {
+  font-size: 16px; font-weight: 700; color: var(--ink);
+  padding: 16px 16px 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.menu-section-title .icon { font-size: 16px; }
+
+.menu-item {
+  background: white;
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.1s;
+}
+.menu-item:active { background: var(--bg); }
+.menu-item-img {
+  width: 80px; height: 80px; border-radius: 10px;
+  background: var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; overflow: hidden;
+  position: relative;
+}
+.menu-item-badge {
+  position: absolute; top: 4px; left: 4px;
+  background: var(--blue); color: white;
+  font-size: 8px; font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 5px; border-radius: 4px;
+}
+.menu-item-body { flex: 1; min-width: 0; }
+.menu-item-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+.menu-item-desc { font-size: 12px; color: var(--muted); line-height: 1.4; margin-bottom: 8px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.menu-item-price { font-size: 15px; font-weight: 700; color: var(--ink); }
+.menu-item-add {
+  position: absolute; bottom: 14px; right: 16px;
+  width: 30px; height: 30px;
+  background: var(--blue); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px; font-weight: 300;
+  cursor: pointer; transition: transform 0.1s, background 0.1s;
+}
+.menu-item-add:active { transform: scale(0.9); }
+.menu-item.esgotado { opacity: 0.5; pointer-events: none; }
+.esgotado-tag {
+  background: #fee2e2; color: var(--red);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: 4px;
+  display: inline-block; margin-top: 4px;
+}
+
+/* Ver pedido bar */
+.ver-pedido-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 12px 16px 20px;
+  display: none;
+}
+.ver-pedido-btn {
+  background: var(--blue);
+  color: white;
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(59,61,155,0.35);
+}
+.ver-pedido-left { display: flex; align-items: center; gap: 10px; }
+.ver-pedido-qty {
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px; padding: 3px 9px;
+  font-size: 13px; font-weight: 700;
+}
+.ver-pedido-label { font-size: 15px; font-weight: 700; }
+.ver-pedido-price { font-size: 15px; font-weight: 700; }
+
+/* ===== CARRINHO ===== */
+#screen-cart { background: var(--bg); }
+
+.cart-header {
+  background: white;
+  padding: 52px 20px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.cart-header-left { display: flex; align-items: center; gap: 12px; }
+.back-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.back-btn svg { width: 20px; height: 20px; color: var(--ink); }
+.cart-title { font-size: 18px; font-weight: 700; color: var(--ink); }
+.cart-clear { font-size: 14px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+.cart-item {
+  background: white; margin: 0 0 1px;
+  display: flex; gap: 12px; padding: 14px 16px;
+  align-items: center;
+}
+.cart-item-img {
+  width: 70px; height: 70px; border-radius: 10px;
+  background: var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+}
+.cart-item-body { flex: 1; }
+.cart-item-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.cart-item-rest { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.cart-item-price { font-size: 15px; font-weight: 700; color: var(--blue); }
+.cart-item-frete { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
+.cart-item-frete svg { width: 11px; height: 11px; }
+.qty-control { display: flex; align-items: center; gap: 10px; }
+.qty-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; color: var(--blue); font-weight: 700;
+  transition: all 0.1s;
+}
+.qty-btn:active { background: var(--blue-light); }
+.qty-num { font-size: 14px; font-weight: 700; color: var(--ink); min-width: 16px; text-align: center; }
+
+.cart-section-header {
+  background: var(--bg);
+  padding: 12px 16px 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted);
+}
+
+.cart-field {
+  background: white;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cart-field-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+.cart-field-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.cart-field-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--blue-light);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cart-field-icon svg { width: 18px; height: 18px; color: var(--blue); }
+.cart-field-info { flex: 1; }
+.cart-field-info strong { font-size: 14px; color: var(--ink); display: block; }
+.cart-field-info span { font-size: 12px; color: var(--muted); }
+.cart-field-action { font-size: 13px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+.cupom-row {
+  background: white;
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+}
+.cupom-input {
+  flex: 1; border: none; outline: none;
+  font-size: 14px; color: var(--ink);
+  background: transparent;
+}
+.cupom-input::placeholder { color: var(--muted); }
+.cupom-tag-icon { color: var(--muted); }
+.cupom-tag-icon svg { width: 18px; height: 18px; display: block; }
+.cupom-btn {
+  background: var(--bg); color: var(--blue);
+  font-size: 13px; font-weight: 700;
+  padding: 7px 14px; border-radius: 8px;
+  cursor: pointer;
+}
+
+.cart-totals {
+  background: white; padding: 16px; margin-top: 8px;
+}
+.total-row {
+  display: flex; justify-content: space-between;
+  font-size: 14px; color: var(--mid); margin-bottom: 8px;
+}
+.total-row.grand {
+  font-size: 17px; font-weight: 800; color: var(--ink);
+  border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
+}
+.total-row.grand .price { color: var(--blue); }
+
+.cart-cta {
+  padding: 16px; background: white; flex-shrink: 0;
+}
+.cta-btn {
+  width: 100%; background: var(--blue); color: white;
+  font-size: 16px; font-weight: 700;
+  padding: 16px; border-radius: 14px;
+  cursor: pointer; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.15s, transform 0.1s;
+}
+.cta-btn:active { transform: scale(0.98); background: var(--blue2); }
+.cta-btn svg { width: 18px; height: 18px; }
+
+/* ===== CONFIRMAÇÃO ===== */
+#screen-confirm { background: var(--bg); }
+
+.confirm-header {
+  background: white;
+  padding: 52px 20px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.close-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 20px; color: var(--ink);
+}
+.confirm-title { font-size: 18px; font-weight: 700; color: var(--ink); }
+
+.confirm-success {
+  background: white; padding: 32px 20px 24px;
+  text-align: center; border-bottom: 8px solid var(--bg);
+  flex-shrink: 0;
+}
+.success-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #dcfce7; border: 2px solid #86efac;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.success-circle svg { width: 36px; height: 36px; color: var(--green); }
+.confirm-success h2 { font-size: 24px; font-weight: 800; color: var(--ink); margin-bottom: 6px; line-height: 1.2; }
+.confirm-success .order-id { font-size: 14px; color: var(--muted); }
+.confirm-success .order-id span { color: var(--blue); font-weight: 700; }
+
+.confirm-tracking {
+  background: white; margin-bottom: 8px;
+  padding: 16px; flex-shrink: 0;
+}
+.tracking-top {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.tracking-time { display: flex; align-items: center; gap: 10px; }
+.tracking-icon { width: 38px; height: 38px; background: #eff6ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.tracking-icon svg { width: 20px; height: 20px; color: var(--blue); }
+.tracking-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
+.tracking-min { font-size: 18px; font-weight: 800; color: var(--ink); }
+.tracking-badge { background: #dcfce7; color: #16a34a; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+
+.progress-bar {
+  display: flex; align-items: flex-start; gap: 0; margin-top: 4px;
+}
+.progress-step { flex: 1; text-align: center; }
+.progress-step-bar {
+  height: 4px; border-radius: 2px; background: var(--border); margin-bottom: 6px;
+}
+.progress-step.done .progress-step-bar { background: var(--blue); }
+.progress-step.partial .progress-step-bar { background: linear-gradient(90deg, var(--blue) 60%, var(--border) 60%); }
+.progress-step-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--muted); font-weight: 600; }
+.progress-step.done .progress-step-label { color: var(--blue); }
+
+.confirm-section-title { font-size: 16px; font-weight: 700; color: var(--ink); padding: 16px 16px 8px; background: white; }
+
+.confirm-item {
+  background: white; display: flex; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center;
+}
+.confirm-item-img {
+  width: 64px; height: 64px; border-radius: 10px;
+  background: var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.confirm-item-body { flex: 1; }
+.confirm-item-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.confirm-item-rest { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.confirm-item-price { font-size: 14px; font-weight: 700; color: var(--blue); }
+.confirm-item-qty {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--ink); flex-shrink: 0;
+}
+
+.confirm-address {
+  background: white; padding: 14px 16px; display: flex; gap: 12px; align-items: center;
+  border-bottom: 8px solid var(--bg);
+}
+.confirm-address-icon { width: 38px; height: 38px; background: var(--blue-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.confirm-address-icon svg { width: 18px; height: 18px; color: var(--blue); }
+.confirm-address-info strong { font-size: 14px; color: var(--ink); display: block; }
+.confirm-address-info span { font-size: 12px; color: var(--muted); }
+
+.confirm-cta {
+  padding: 16px; background: white; flex-shrink: 0;
+}
+.confirm-cta-btn {
+  width: 100%; background: var(--bg); color: var(--mid);
+  font-size: 15px; font-weight: 600;
+  padding: 14px; border-radius: 14px;
+  cursor: pointer; text-align: center;
+  border: 1.5px solid var(--border);
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position: absolute; bottom: 90px; left: 16px; right: 16px;
+  background: var(--ink); color: white;
+  padding: 12px 16px; border-radius: 12px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  z-index: 500; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s;
+}
+.toast.show { opacity: 1; }
+.toast svg { width: 16px; height: 16px; color: var(--green); flex-shrink: 0; }
+
+/* ===== EMPTY CART ===== */
+.empty-cart {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 32px; text-align: center; flex: 1;
+}
+.empty-cart .icon { font-size: 56px; margin-bottom: 16px; }
+.empty-cart h3 { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.empty-cart p { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 24px; }
+.empty-cart-btn {
+  background: var(--blue); color: white;
+  padding: 12px 28px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+}
+
+/* Landscape hint */
+@media (max-height: 500px) {
+  body { align-items: flex-start; padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+
+  <!-- ===== SPLASH ===== -->
+  <div class="screen active" id="screen-splash">
+    <div class="splash-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      <span>DeliverEase</span>
+    </div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  </div>
+
+  <!-- ===== HOME ===== -->
+  <div class="screen" id="screen-home">
+    <!-- Status bar -->
+    <div class="statusbar" style="background:var(--blue); color:white;">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="1" width="2.5" height="11" rx="1" opacity=".3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 2.4C5.4 2.4 3.1 3.5 1.5 5.3L0 3.8C2 1.4 4.8 0 8 0s6 1.4 8 3.8L14.5 5.3C12.9 3.5 10.6 2.4 8 2.4z"/><path d="M8 5.6c-1.6 0-3 .7-4 1.8L2.5 5.9C3.9 4.4 5.8 3.5 8 3.5s4.1.9 5.5 2.4L12 7.4C11 6.3 9.6 5.6 8 5.6z"/><circle cx="8" cy="10" r="2"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="white"><rect x="0" y="1" width="21" height="10" rx="2.5" stroke="white" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="17" height="7" rx="1.5" fill="white"/><rect x="22" y="4" width="3" height="4" rx="1.5" fill="white" opacity=".5"/></svg>
+      </div>
+    </div>
+
+    <!-- Header azul -->
+    <div class="home-header">
+      <div class="home-header-top">
+        <div class="home-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          DeliverEase
+        </div>
+        <div class="home-header-icons">
+          <div class="header-icon-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="notif-dot"></div>
+          </div>
+          <div class="header-icon-btn" style="background:rgba(255,255,255,0.15); overflow:hidden;">
+            <span style="font-size:18px;">👤</span>
+          </div>
+        </div>
+      </div>
+      <div class="search-box" onclick="showToast('Busca em breve!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>Pesquise por comida, mercado...</span>
+      </div>
+      <div class="address-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Rua Autemias, 485 – São Paulo...
+        <span class="chevron">▾</span>
+      </div>
+    </div>
+
+    <div class="scroll-area">
+      <div class="home-body">
+
+        <!-- Categorias -->
+        <div class="section-header">
+          <span class="section-title">Categorias</span>
+          <span class="section-link">Ver todos</span>
+        </div>
+        <div class="categories">
+          <div class="cat-item" onclick="filterCat('comida')">
+            <div class="cat-icon" style="background:#fff7ed;"><span>🍔</span></div>
+            <span class="cat-label">Comida</span>
+          </div>
+          <div class="cat-item" onclick="filterCat('mercado')">
+            <div class="cat-icon" style="background:#f0fdf4;"><span>🛒</span></div>
+            <span class="cat-label">Mercado</span>
+          </div>
+          <div class="cat-item" onclick="filterCat('farmacia')">
+            <div class="cat-icon" style="background:#eff6ff;"><span>💊</span></div>
+            <span class="cat-label">Farmácia</span>
+          </div>
+          <div class="cat-item" onclick="filterCat('conveniencia')">
+            <div class="cat-icon" style="background:#faf5ff;"><span>🏪</span></div>
+            <span class="cat-label">Conveniência</span>
+          </div>
+          <div class="cat-item" onclick="filterCat('bebidas')">
+            <div class="cat-icon" style="background:#fff1f2;"><span>🥤</span></div>
+            <span class="cat-label">Bebidas</span>
+          </div>
+          <div class="cat-item" onclick="filterCat('sobremesa')">
+            <div class="cat-icon" style="background:#fefce8;"><span>🍰</span></div>
+            <span class="cat-label">Sobremesas</span>
+          </div>
+        </div>
+
+        <!-- Banner -->
+        <div class="banner">
+          <div>
+            <span class="banner-label">Tempo Limitado</span>
+            <h3>50% OFF</h3>
+            <p>Nos primeiros 3 pedidos</p>
+            <span class="banner-btn" onclick="showToast('Promoção aplicada! 🎉')">Adquirir agora!</span>
+          </div>
+          <span class="banner-emoji">🍕</span>
+        </div>
+
+        <!-- Restaurantes -->
+        <div class="section-header">
+          <span class="section-title">Popular perto de você</span>
+          <div style="display:flex;gap:8px;">
+            <div style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</div>
+            <div style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;">›</div>
+          </div>
+        </div>
+
+        <!-- King Burger -->
+        <div class="rest-card" onclick="openRest('king')">
+          <div class="rest-card-img">
+            🍔
+            <div class="rest-rating">⭐ 4.8</div>
+            <div class="fav-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="rest-card-body">
+            <div class="rest-name">King Burger</div>
+            <div class="rest-cat">Fast Food • $$</div>
+            <div class="rest-meta">
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                20–30 min
+              </span>
+              <span class="rest-meta-item free">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                Grátis
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tokyo Temakeria -->
+        <div class="rest-card" onclick="openRest('tokyo')">
+          <div class="rest-card-img">
+            🍣
+            <div class="rest-rating">⭐ 4.6</div>
+            <div class="fav-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="rest-card-body">
+            <div class="rest-name">Tokyo Temakeria</div>
+            <div class="rest-cat">Sushi • $$$</div>
+            <div class="rest-meta">
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                35–45 min
+              </span>
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                R$&nbsp;10
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mercado Fresh -->
+        <div class="rest-card" onclick="openRest('mercado')">
+          <div class="rest-card-img">
+            🛒
+            <div class="rest-rating">⭐ 4.9</div>
+            <div class="fav-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="rest-card-body">
+            <div class="rest-name">Mercado Fresh</div>
+            <div class="rest-cat">Mercado • $$</div>
+            <div class="rest-meta">
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                15–25 min
+              </span>
+              <span class="rest-meta-item free">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                Grátis acima de R$20
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rafaelo Pizzaria -->
+        <div class="rest-card" onclick="openRest('rafaelo')">
+          <div class="rest-card-img">
+            🍕
+            <div class="rest-rating">⭐ 4.5</div>
+            <div class="fav-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="rest-card-body">
+            <div class="rest-name">Rafaelo Pizzaria</div>
+            <div class="rest-cat">Pizza • $$</div>
+            <div class="rest-meta">
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                30–45 min
+              </span>
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                R$&nbsp;5
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- +1 Cafeteria -->
+        <div class="rest-card" onclick="openRest('cafe')">
+          <div class="rest-card-img">
+            ☕
+            <div class="rest-rating">⭐ 4.7</div>
+            <div class="fav-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+          <div class="rest-card-body">
+            <div class="rest-name">+1 Cafeteria</div>
+            <div class="rest-cat">Café • $</div>
+            <div class="rest-meta">
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                10–20 min
+              </span>
+              <span class="rest-meta-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                R$&nbsp;10
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:20px;"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Início
+      </div>
+      <div class="nav-item" onclick="showToast('Busca em breve!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Pesquisar
+      </div>
+      <div class="nav-fab" onclick="goTo('cart')" id="home-fab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <div class="cart-badge" id="cart-badge">0</div>
+      </div>
+      <div class="nav-item" onclick="goTo('cart')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Pedidos
+      </div>
+      <div class="nav-item" onclick="showToast('Perfil em breve!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Perfil
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESTAURANTE ===== -->
+  <div class="screen" id="screen-rest">
+    <div style="position:relative;flex-shrink:0;">
+      <div class="rest-hero" id="rest-hero-emoji">🍔</div>
+      <div class="rest-hero-back" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div class="rest-hero-search" onclick="showToast('Busca no cardápio em breve!')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <div class="rest-hero-fav" onclick="showToast('Adicionado aos favoritos! ❤️')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+    </div>
+
+    <!-- Status bar overlay -->
+    <div class="statusbar" style="position:absolute;top:0;left:0;right:0;color:transparent;">
+      <span class="time" style="opacity:0;">9:41</span>
+    </div>
+
+    <div class="rest-info-card">
+      <div class="rest-info-name" id="rest-info-name">King Burger</div>
+      <div class="rest-info-sub" id="rest-info-sub">Fast Food • $$</div>
+      <div class="rest-info-meta">
+        <span><span class="star">★</span> <span id="rest-info-rating">4.8</span></span>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="rest-info-time">20–30 min</span>
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <span id="rest-info-frete">Grátis</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="tabs" id="rest-tabs"></div>
+
+    <div class="scroll-area" id="rest-menu-scroll">
+      <div id="rest-menu-content"></div>
+      <div style="height:80px;"></div>
+    </div>
+
+    <div class="ver-pedido-bar" id="ver-pedido-bar">
+      <div class="ver-pedido-btn" onclick="goTo('cart')">
+        <div class="ver-pedido-left">
+          <span class="ver-pedido-qty" id="ver-pedido-qty">2</span>
+          <span class="ver-pedido-label">Ver pedido</span>
+        </div>
+        <span class="ver-pedido-price" id="ver-pedido-price">R$65,00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CARRINHO ===== -->
+  <div class="screen" id="screen-cart">
+    <div class="cart-header">
+      <div class="cart-header-left">
+        <div class="back-btn" onclick="goBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <span class="cart-title">Pedido</span>
+      </div>
+      <span class="cart-clear" onclick="clearCart()">Limpar</span>
+    </div>
+
+    <div class="scroll-area" id="cart-scroll">
+      <div id="cart-items-container"></div>
+
+      <div class="cart-section-header">Cupom</div>
+      <div class="cupom-row">
+        <span class="cupom-tag-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </span>
+        <input class="cupom-input" placeholder="Digite seu cupom" id="cupom-input">
+        <div class="cupom-btn" onclick="applyCupom()">Aplicar</div>
+      </div>
+
+      <div class="cart-section-header">Método de pagamento</div>
+      <div class="cart-field">
+        <div class="cart-field-row">
+          <div class="cart-field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div class="cart-field-info">
+            <strong>Elo **** 1234</strong>
+            <span>Validade 12/35</span>
+          </div>
+          <span class="cart-field-action">Alterar</span>
+        </div>
+      </div>
+
+      <div class="cart-section-header">Local de entrega</div>
+      <div class="cart-field">
+        <div class="cart-field-row">
+          <div class="cart-field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="cart-field-info">
+            <strong>Casa</strong>
+            <span>Rua Autemias, 485 – São Paulo...</span>
+          </div>
+          <span class="cart-field-action">Alterar</span>
+        </div>
+      </div>
+
+      <div class="cart-totals" id="cart-totals"></div>
+    </div>
+
+    <div class="cart-cta">
+      <div class="cta-btn" onclick="doCheckout()">
+        Realizar pedido
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONFIRMAÇÃO ===== -->
+  <div class="screen" id="screen-confirm">
+    <div class="confirm-header">
+      <div class="close-btn" onclick="resetAll()">✕</div>
+      <span class="confirm-title">Confirmação</span>
+      <div style="width:36px;"></div>
+    </div>
+
+    <div class="scroll-area">
+      <div class="confirm-success">
+        <div class="success-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2>Pedido realizado<br>com sucesso!</h2>
+        <p class="order-id">Pedido <span id="confirm-order-id">#DNC58745</span> foi confirmado.</p>
+      </div>
+
+      <div class="confirm-tracking">
+        <div class="tracking-top">
+          <div class="tracking-time">
+            <div class="tracking-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="tracking-label">Estimativa</div>
+              <div class="tracking-min">25–35 min</div>
+            </div>
+          </div>
+          <div class="tracking-badge">Aprovado</div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-step done">
+            <div class="progress-step-bar"></div>
+            <div class="progress-step-label">Confirmado</div>
+          </div>
+          <div class="progress-step partial">
+            <div class="progress-step-bar"></div>
+            <div class="progress-step-label">Preparando</div>
+          </div>
+          <div class="progress-step">
+            <div class="progress-step-bar"></div>
+            <div class="progress-step-label">A caminho</div>
+          </div>
+          <div class="progress-step">
+            <div class="progress-step-bar"></div>
+            <div class="progress-step-label">Entregue</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="confirm-address">
+        <div class="confirm-address-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div class="confirm-address-info">
+          <strong>Casa</strong>
+          <span>Rua Autemias, 485 – São Paulo...</span>
+        </div>
+      </div>
+
+      <div class="confirm-section-title">Pedido</div>
+      <div id="confirm-items"></div>
+
+      <div style="height:16px; background:var(--bg);"></div>
+    </div>
+
+    <div class="confirm-cta">
+      <div class="confirm-cta-btn" onclick="resetAll()">Voltar a tela inicial</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toast-msg"></span>
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+// ===== DADOS DOS RESTAURANTES =====
+const RESTAURANTES = {
+  king: {
+    nome: 'King Burger', sub: 'Fast Food • $$',
+    emoji: '🍔', rating: '4.8', tempo: '20–30 min', frete: 'Grátis',
+    tabs: ['Popular', 'Hamburguers', 'Combos'],
+    menu: [
+      { sec: '🔥 Popular', items: [
+        { id:'kb1', nome:'Cheeseburger', desc:'Hambúrguer angus, queijo cheddar, pepino, tomate, alface crocante e molho especial da casa.', preco:32.50, emoji:'🍔', badge:'MAIS PEDIDO' },
+        { id:'kb2', nome:'Crispy Chicken King', desc:'Frango empanado crocante, pickles, maionese apimentada e coleslaw fresco.', preco:31.00, emoji:'🍗' },
+      ]},
+      { sec: 'Especialidades King', items: [
+        { id:'kb3', nome:'Tripla Confusão', desc:'3 hambúrguers de patinho, queijo duplo, bacon, cebola caramelizada e molho BBQ.', preco:45.50, emoji:'🍔', badge:'MAIS VENDIDO' },
+        { id:'kb4', nome:'Cogu King', desc:'Cogumelos na manteiga, queijo prato, cebola caramelizada, hambúrguer angus.', preco:33.00, emoji:'🍄', esgotado:true },
+        { id:'kb5', nome:'Fish King', desc:'Filé de peixe empanado, molho tártaro, alface e tomate.', preco:29.50, emoji:'🐟' },
+      ]},
+      { sec: 'Combos', items: [
+        { id:'kb6', nome:'Combo Família', desc:'2 cheeseburgers, 2 batatas médias e 2 refrigerantes 400ml.', preco:89.90, emoji:'🎉' },
+        { id:'kb7', nome:'Combo Solo', desc:'1 sanduíche à escolha, batata média e refrigerante 300ml.', preco:44.90, emoji:'🥤' },
+      ]},
+    ]
+  },
+  tokyo: {
+    nome: 'Tokyo Temakeria', sub: 'Sushi • $$$',
+    emoji: '🍣', rating: '4.6', tempo: '35–45 min', frete: 'R$ 10',
+    tabs: ['Popular', 'Temakis', 'Combinados'],
+    menu: [
+      { sec: '🔥 Popular', items: [
+        { id:'tk1', nome:'Temaki Salmão', desc:'Temaki tradicional com salmão fresco, cream cheese e pepino japonês.', preco:28.00, emoji:'🍣', badge:'MAIS PEDIDO' },
+        { id:'tk2', nome:'Combo 20 peças', desc:'Salmão, atum, camarão e especial da casa. Acompanha shoyu e gengibre.', preco:72.00, emoji:'🍱' },
+      ]},
+      { sec: 'Temakis', items: [
+        { id:'tk3', nome:'Temaki Atum', desc:'Atum fresco, cebolinha, gergelim torrado e molho ponzu.', preco:26.00, emoji:'🐟' },
+        { id:'tk4', nome:'Temaki Camarão', desc:'Camarão grelhado, abacate, cream cheese e ovas de peixe.', preco:32.00, emoji:'🦐', badge:'MAIS VENDIDO' },
+        { id:'tk5', nome:'Temaki Hot Filadélfia', desc:'Salmão flambado, cream cheese, cebola crocante e molho especial picante.', preco:30.00, emoji:'🔥' },
+      ]},
+      { sec: 'Combinados', items: [
+        { id:'tk6', nome:'Combinado Família 40 peças', desc:'40 peças variadas: salmão, atum, camarão, filadélfia e especial.', preco:138.00, emoji:'🍱' },
+        { id:'tk7', nome:'Uramaki Especial 8 peças', desc:'Uramaki com salmão, abacate e cobertura de ovas.', preco:36.00, emoji:'🍣', esgotado:true },
+      ]},
+    ]
+  },
+  mercado: {
+    nome: 'Mercado Fresh', sub: 'Mercado • $$',
+    emoji: '🛒', rating: '4.9', tempo: '15–25 min', frete: 'Grátis acima de R$20',
+    tabs: ['Frutas', 'Laticínios', 'Bebidas'],
+    menu: [
+      { sec: '🍎 Frutas e Legumes', items: [
+        { id:'mf1', nome:'Cesta de Frutas Mistas', desc:'1kg de frutas da estação selecionadas: morango, uva, manga e maçã.', preco:18.90, emoji:'🍓', badge:'FRESH' },
+        { id:'mf2', nome:'Abacate Hass (un)', desc:'Abacate hass selecionado, ponto perfeito para consumo.', preco:7.50, emoji:'🥑' },
+        { id:'mf3', nome:'Tomate Cereja (250g)', desc:'Tomates cereja orgânicos cultivados sem agrotóxicos.', preco:9.90, emoji:'🍅' },
+      ]},
+      { sec: 'Laticínios', items: [
+        { id:'mf4', nome:'Iogurte Grego Natural (170g)', desc:'Iogurte grego cremoso, sem açúcar, rico em proteínas.', preco:6.50, emoji:'🥛' },
+        { id:'mf5', nome:'Queijo Minas Frescal', desc:'Queijo fresco artesanal, 300g. Produção local.', preco:14.90, emoji:'🧀', badge:'LOCAL' },
+      ]},
+      { sec: 'Bebidas', items: [
+        { id:'mf6', nome:'Água de Coco (300ml)', desc:'Água de coco natural gelada, sem conservantes.', preco:8.00, emoji:'🥥' },
+        { id:'mf7', nome:'Suco de Laranja (500ml)', desc:'Suco de laranja natural espremido na hora.', preco:12.00, emoji:'🍊' },
+      ]},
+    ]
+  },
+  rafaelo: {
+    nome: 'Rafaelo Pizzaria', sub: 'Pizza • $$',
+    emoji: '🍕', rating: '4.5', tempo: '30–45 min', frete: 'R$ 5',
+    tabs: ['Popular', 'Tradicionais', 'Especiais'],
+    menu: [
+      { sec: '🔥 Popular', items: [
+        { id:'rp1', nome:'Pizza de Pepperoni (M)', desc:'Molho de tomate artesanal, mussarela premium e pepperoni fatiado generosamente.', preco:44.00, emoji:'🍕', badge:'MAIS PEDIDA' },
+        { id:'rp2', nome:'Pizza Margherita (M)', desc:'Molho de tomate, mussarela de búfala, manjericão fresco e azeite extra virgem.', preco:38.00, emoji:'🍕' },
+      ]},
+      { sec: 'Tradicionais', items: [
+        { id:'rp3', nome:'Pizza Portuguesa (G)', desc:'Presunto, ovos, cebola, azeitonas e mussarela.', preco:52.00, emoji:'🍕' },
+        { id:'rp4', nome:'Pizza Frango com Catupiry (G)', desc:'Frango desfiado temperado e catupiry original.', preco:54.00, emoji:'🐔', badge:'FAVORITA' },
+        { id:'rp5', nome:'Pizza 4 Queijos (M)', desc:'Mussarela, provolone, gorgonzola e parmesão.', preco:48.00, emoji:'🧀' },
+      ]},
+      { sec: 'Especiais', items: [
+        { id:'rp6', nome:'Pizza Trufada (M)', desc:'Cogumelos shiitake, trufas, mussarela e azeite trufado.', preco:68.00, emoji:'🍄' },
+        { id:'rp7', nome:'Calzone Caprese', desc:'Massa folhada recheada com tomate seco, mussarela e manjericão.', preco:36.00, emoji:'🫓', esgotado:true },
+      ]},
+    ]
+  },
+  cafe: {
+    nome: '+1 Cafeteria', sub: 'Café • $',
+    emoji: '☕', rating: '4.7', tempo: '10–20 min', frete: 'R$ 10',
+    tabs: ['Popular', 'Cafés', 'Doces'],
+    menu: [
+      { sec: '☕ Popular', items: [
+        { id:'cf1', nome:'Café Latte', desc:'Espresso duplo com leite vaporizado cremoso e arte em latte art.', preco:15.50, emoji:'☕', badge:'MAIS PEDIDO' },
+        { id:'cf2', nome:'Cappuccino Italiano', desc:'Espresso, leite vaporizado e espuma densa. Clássico da casa.', preco:16.00, emoji:'☕' },
+      ]},
+      { sec: 'Cafés', items: [
+        { id:'cf3', nome:'Cold Brew 400ml', desc:'Café coado a frio por 12h, servido com gelo e leite condensado.', preco:18.00, emoji:'🧊' },
+        { id:'cf4', nome:'Espresso Duplo', desc:'Shot duplo de espresso com blend especial da casa.', preco:9.00, emoji:'☕' },
+        { id:'cf5', nome:'Matcha Latte', desc:'Matcha japonês premium com leite de aveia.', preco:19.00, emoji:'🍵' },
+      ]},
+      { sec: 'Doces e Pães', items: [
+        { id:'cf6', nome:'Croissant de Manteiga', desc:'Croissant folhado artesanal, assado na hora. Serve com manteiga e geleia.', preco:12.00, emoji:'🥐', badge:'FRESCO' },
+        { id:'cf7', nome:'Brownie de Chocolate Belga', desc:'Brownie denso com chocolate belga 70% cacau e nozes.', preco:14.00, emoji:'🍫' },
+      ]},
+    ]
+  }
+};
+
+// ===== ESTADO =====
+let cart = [];
+let currentRest = null;
+let history = ['home'];
+
+// ===== NAVEGAÇÃO =====
+function goTo(screenId) {
+  const current = history[history.length - 1];
+  if (current === screenId) return;
+
+  const fromEl = document.getElementById('screen-' + current);
+  const toEl   = document.getElementById('screen-' + screenId);
+
+  fromEl.classList.remove('active');
+  fromEl.classList.add('slide-back');
+  setTimeout(() => fromEl.classList.remove('slide-back'), 300);
+
+  toEl.classList.add('active');
+  history.push(screenId);
+
+  if (screenId === 'cart') renderCart();
+}
+
+function goBack() {
+  if (history.length <= 1) return;
+  const current = history.pop();
+  const prev = history[history.length - 1];
+
+  const fromEl = document.getElementById('screen-' + current);
+  const toEl   = document.getElementById('screen-' + prev);
+
+  fromEl.classList.remove('active');
+  toEl.classList.remove('slide-back');
+  toEl.classList.add('active');
+}
+
+function resetAll() {
+  cart = [];
+  history = ['home'];
+  updateCartBadge();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active', 'slide-back'));
+  document.getElementById('screen-home').classList.add('active');
+  document.getElementById('screen-home').querySelector('.scroll-area').scrollTop = 0;
+}
+
+// ===== RESTAURANTE =====
+function openRest(id) {
+  currentRest = id;
+  const r = RESTAURANTES[id];
+
+  document.getElementById('rest-hero-emoji').textContent = r.emoji;
+  document.getElementById('rest-info-name').textContent  = r.nome;
+  document.getElementById('rest-info-sub').textContent   = r.sub;
+  document.getElementById('rest-info-rating').textContent = r.rating;
+  document.getElementById('rest-info-time').textContent  = r.tempo;
+  document.getElementById('rest-info-frete').textContent = r.frete;
+
+  // Tabs
+  const tabsEl = document.getElementById('rest-tabs');
+  tabsEl.innerHTML = r.tabs.map((t, i) =>
+    `<div class="tab-item ${i===0?'active':''}" onclick="switchTab(this, ${i})">${t}</div>`
+  ).join('');
+
+  renderMenu();
+  updateVerPedido();
+  document.getElementById('rest-menu-scroll').scrollTop = 0;
+  goTo('rest');
+}
+
+function switchTab(el, idx) {
+  document.querySelectorAll('#rest-tabs .tab-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // Scroll para a seção
+  const sections = document.querySelectorAll('.menu-section-title');
+  if (sections[idx]) sections[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderMenu() {
+  const r = RESTAURANTES[currentRest];
+  let html = '';
+  for (const sec of r.menu) {
+    html += `<div class="menu-section-title"><span class="icon">${sec.sec.split(' ')[0]}</span> ${sec.sec.replace(/^[^\s]+\s/, '')}</div>`;
+    for (const item of sec.items) {
+      const cartItem = cart.find(c => c.id === item.id);
+      const inCart = cartItem ? cartItem.qty : 0;
+      html += `
+        <div class="menu-item${item.esgotado?' esgotado':''}" ${!item.esgotado?`onclick="addItem('${currentRest}','${item.id}')"`:''}>
+          <div class="menu-item-img">
+            ${item.emoji}
+            ${item.badge?`<div class="menu-item-badge">${item.badge}</div>`:''}
+          </div>
+          <div class="menu-item-body">
+            <div class="menu-item-name">${item.nome}</div>
+            <div class="menu-item-desc">${item.desc}</div>
+            <div class="menu-item-price">R$${item.preco.toFixed(2).replace('.',',')}</div>
+            ${item.esgotado?'<span class="esgotado-tag">ESGOTADO</span>':''}
+          </div>
+          ${!item.esgotado?`<div class="menu-item-add" onclick="event.stopPropagation();addItem('${currentRest}','${item.id}')">${inCart>0?inCart:'+'}</div>`:''}
+        </div>`;
+    }
+  }
+  document.getElementById('rest-menu-content').innerHTML = html;
+}
+
+// ===== CARRINHO =====
+function findMenuItem(restId, itemId) {
+  const r = RESTAURANTES[restId];
+  for (const sec of r.menu)
+    for (const item of sec.items)
+      if (item.id === itemId) return item;
+  return null;
+}
+
+function addItem(restId, itemId) {
+  const existing = cart.find(c => c.id === itemId);
+  if (existing) {
+    existing.qty++;
+  } else {
+    const item = findMenuItem(restId, itemId);
+    cart.push({ ...item, restId, restNome: RESTAURANTES[restId].nome, qty: 1 });
+  }
+  updateCartBadge();
+  updateVerPedido();
+  renderMenu();
+  showToast(`${findMenuItem(restId, itemId).nome} adicionado! 🛒`);
+}
+
+function changeQty(itemId, delta) {
+  const idx = cart.findIndex(c => c.id === itemId);
+  if (idx === -1) return;
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  updateCartBadge();
+  updateVerPedido();
+  renderCart();
+  if (currentRest) renderMenu();
+}
+
+function clearCart() {
+  cart = [];
+  updateCartBadge();
+  updateVerPedido();
+  renderCart();
+  if (currentRest) renderMenu();
+}
+
+function updateCartBadge() {
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  const badge = document.getElementById('cart-badge');
+  if (total > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = total;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function updateVerPedido() {
+  const bar = document.getElementById('ver-pedido-bar');
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  const price = cart.reduce((s, c) => s + c.qty * c.preco, 0);
+  if (total > 0) {
+    bar.style.display = 'block';
+    document.getElementById('ver-pedido-qty').textContent = total;
+    document.getElementById('ver-pedido-price').textContent = 'R$' + price.toFixed(2).replace('.', ',');
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items-container');
+  const totalsEl  = document.getElementById('cart-totals');
+
+  if (cart.length === 0) {
+    container.innerHTML = `
+      <div class="empty-cart">
+        <div class="icon">🛒</div>
+        <h3>Seu carrinho está vazio</h3>
+        <p>Adicione itens dos restaurantes para começar seu pedido.</p>
+        <div class="empty-cart-btn" onclick="goBack()">Explorar restaurantes</div>
+      </div>`;
+    totalsEl.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  for (const item of cart) {
+    const subtotal = (item.preco * item.qty).toFixed(2).replace('.', ',');
+    html += `
+      <div class="cart-item">
+        <div class="cart-item-img">${item.emoji}</div>
+        <div class="cart-item-body">
+          <div class="cart-item-name">${item.nome}</div>
+          <div class="cart-item-rest">${item.restNome}</div>
+          <div class="cart-item-price">R$${subtotal}</div>
+        </div>
+        <div class="qty-control">
+          <div class="qty-btn" onclick="changeQty('${item.id}',-1)">−</div>
+          <span class="qty-num">${item.qty}</span>
+          <div class="qty-btn" onclick="changeQty('${item.id}',1)">+</div>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+
+  const subtotal = cart.reduce((s, c) => s + c.qty * c.preco, 0);
+  const frete = subtotal >= 20 ? 0 : 10;
+  const taxa = 5;
+  const total = subtotal + frete + taxa;
+
+  totalsEl.innerHTML = `
+    <div class="total-row"><span>Subtotal</span><span>R$${subtotal.toFixed(2).replace('.',',')}</span></div>
+    <div class="total-row"><span>Entrega</span><span>${frete===0?'Grátis':'R$'+frete.toFixed(2).replace('.',',')}</span></div>
+    <div class="total-row"><span>Taxa do app</span><span>R$${taxa.toFixed(2).replace('.',',')}</span></div>
+    <div class="total-row grand"><span>Total</span><span class="price">R$${total.toFixed(2).replace('.',',')}</span></div>`;
+}
+
+function applyCupom() {
+  const val = document.getElementById('cupom-input').value.trim().toUpperCase();
+  if (val === 'DELIVER10') showToast('Cupom aplicado! 10% de desconto 🎉');
+  else if (val === '') showToast('Digite um cupom válido');
+  else showToast('Cupom inválido ou expirado');
+}
+
+function doCheckout() {
+  if (cart.length === 0) { showToast('Adicione itens ao carrinho primeiro!'); return; }
+
+  // Preencher confirmação
+  const orderId = '#DNC' + Math.floor(10000 + Math.random() * 89999);
+  document.getElementById('confirm-order-id').textContent = orderId;
+
+  let html = '';
+  for (const item of cart) {
+    html += `
+      <div class="confirm-item">
+        <div class="confirm-item-img">${item.emoji}</div>
+        <div class="confirm-item-body">
+          <div class="confirm-item-name">${item.nome}</div>
+          <div class="confirm-item-rest">${item.restNome}</div>
+          <div class="confirm-item-price">R$${(item.preco).toFixed(2).replace('.',',')}</div>
+        </div>
+        <div class="confirm-item-qty">${item.qty}</div>
+      </div>`;
+  }
+  document.getElementById('confirm-items').innerHTML = html;
+
+  goTo('confirm');
+}
+
+// ===== UTILS =====
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function filterCat(cat) {
+  const names = { comida:'King Burger', mercado:'Mercado Fresh', farmacia:'Farmácia (em breve)', conveniencia:'Conveniência (em breve)', bebidas:'+1 Cafeteria', sobremesa:'Rafaelo Pizzaria' };
+  showToast('Filtrando: ' + (names[cat] || cat));
+}
+
+// ===== SPLASH → HOME =====
+setTimeout(() => {
+  document.getElementById('screen-splash').classList.remove('active');
+  document.getElementById('screen-home').classList.add('active');
+}, 3000);
+</script>
+</body>
+</html>
